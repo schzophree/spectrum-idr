@@ -1,0 +1,14 @@
+{
+  "name": "spectrum-idr-backend",
+  "version": "1.0.0",
+  "description": "Local backend to load and serve YouTube audio for spectrum visualizer",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "@distube/ytdl-core": "^4.15.9"
+  }
+}

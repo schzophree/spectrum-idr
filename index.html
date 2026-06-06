@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IDR to USD Spectrum</title>
+    <link rel="icon" type="image/x-icon" href="icon.ico" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div
+      class="drawer-overlay"
+      id="drawerOverlay"
+      onclick="toggleSrcBody()"
+    ></div>
+    <aside class="src-drawer" id="srcDrawer">
+      <div class="drawer-header">
+        <h3>Sumber Audio</h3>
+        <button class="drawer-close" onclick="toggleSrcBody()">&times;</button>
+      </div>
+      <div class="drawer-body">
+        <div class="upload-zone" id="dropZone">
+          <input
+            type="file"
+            accept="audio/*"
+            id="fileInput"
+            onchange="onFileChange(event)"
+          />
+          <div class="upload-icon">♪</div>
+          <div class="upload-main">Seret & lepas file audio di sini</div>
+          <div class="upload-sub">MP3 · WAV · FLAC · OGG · AAC</div>
+        </div>
+
+        <div class="drawer-divider">atau</div>
+
+        <div class="url-input-section">
+          <label for="ytUrlInput" class="url-label"
+            >Masukkan Link YouTube</label
+          >
+          <div class="url-row">
+            <input
+              class="url-input"
+              id="ytUrlInput"
+              type="url"
+              placeholder="https://www.youtube.com/watch?v=..."
+            />
+            <button
+              class="gf-load-btn"
+              id="ytLoadBtn"
+              onclick="loadFromYoutube()"
+            >
+              Muat
+            </button>
+          </div>
+        </div>
+
+        <div class="url-status" id="urlStatus">
+          Pilih file audio atau masukkan link YouTube untuk memulai.
+        </div>
+      </div>
+    </aside>
+
+    <main class="app-shell">
+      <section class="gf-card">
+        <div class="gf-actions">
+          <button class="gf-btn-icon" title="Bagikan" aria-label="Bagikan">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </button>
+          <a
+            class="gf-btn-follow"
+            href="https://schz-porto-ngawuor.vercel.app/"
+            target="_blank"
+            rel="noopener"
+          >
+            <span>Ikuti</span>
+          </a>
+        </div>
+
+        <div class="gf-top">
+          <div class="gf-left">
+            <div class="gf-subtitle" id="subtitleText">
+              1 Dolar Amerika Serikat sama dengan
+            </div>
+            <div class="gf-big-value" id="bigValue">0 Rupiah Indonesia</div>
+            <div class="gf-meta">
+              <span id="metaDate">6 Jun</span>
+              <span class="dot">·</span>
+              <span id="metaTime">00:00</span>
+              <span>UTC</span>
+              <span class="dot">·</span>
+              <span>Dari Morningstar</span>
+              <span class="dot">·</span>
+              <span>Penafian</span>
+            </div>
+            <div class="gf-inputs">
+              <div class="gf-input-row">
+                <input
+                  class="gf-input-num"
+                  type="text"
+                  id="inputBass"
+                  value="0"
+                  readonly
+                />
+                <div class="gf-select-wrap">
+                  <span class="gf-select-label">Dollar Amerika Serikat</span>
+                  <span class="gf-chevron">▾</span>
+                </div>
+              </div>
+              <div class="gf-input-row">
+                <input
+                  class="gf-input-num"
+                  type="text"
+                  id="inputFreq"
+                  value="0 "
+                  readonly
+                />
+                <div class="gf-select-wrap">
+                  <span class="gf-select-label">Rupiah Indonesia</span>
+                  <span class="gf-chevron">▾</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="gf-right">
+            <div class="gf-tabs">
+              <button class="gf-tab" onclick="setVizMode('BASS', this)">
+                BASS
+              </button>
+              <button class="gf-tab" onclick="setVizMode('MID', this)">
+                MID
+              </button>
+              <button class="gf-tab active" onclick="setVizMode('FULL', this)">
+                FULL
+              </button>
+              <button class="gf-tab" onclick="setVizMode('WAVE', this)">
+                WAVE
+              </button>
+              <button class="gf-tab" onclick="setVizMode('MAKS', this)">
+                MAKS
+              </button>
+            </div>
+
+            <div class="gf-chart-wrap" id="chartWrap">
+              <div class="gf-yaxis" id="yAxis">
+                <span class="gf-ylabel" id="yTop">100</span>
+                <span class="gf-ylabel" id="yMid1">75</span>
+                <span class="gf-ylabel" id="yMid2">50</span>
+                <span class="gf-ylabel" id="yMid3">25</span>
+                <span class="gf-ylabel" id="yBot">0</span>
+              </div>
+
+              <div class="gf-live-dot">
+                <div class="gf-live-val" id="liveVal">0</div>
+                <div class="gf-live-date" id="liveDate">Rupiah Indonesia</div>
+              </div>
+
+              <div class="gf-crosshair" id="crosshair">
+                <div class="gf-crosshair-dot" id="crosshairDot"></div>
+                <div class="gf-crosshair-box" id="crosshairBox">
+                  <div class="gf-crosshair-val" id="crosshairVal">0</div>
+                  <div class="gf-crosshair-lbl" id="crosshairLbl">
+                    Frekuensi Dominan
+                  </div>
+                </div>
+              </div>
+
+              <canvas
+                id="specCanvas"
+                onmousemove="onChartMove(event)"
+                onmouseleave="onChartLeave()"
+              ></canvas>
+
+              <div class="gf-xaxis" id="xAxis">
+                <span class="gf-xlabel">0 Hz</span>
+                <span class="gf-xlabel">5k</span>
+                <span class="gf-xlabel">10k</span>
+                <span class="gf-xlabel">20k</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <a
+          class="gf-detail-link"
+          href="https://www.google.com/finance/quote/USD-IDR?sa=X&ved=2ahUKEwjH-d3yt_KUAxWq4zgGHYGmEQ0QmY0JegQIDRA0"
+          target="_blank"
+          rel="noopener"
+        >
+          Selengkapnya tentang USD/IDR
+          <span class="arrow">›</span>
+        </a>
+      </section>
+
+      <section class="playback-bar">
+        <div class="playback-row">
+          <button
+            class="src-menu-btn"
+            id="menuBtn"
+            onclick="toggleSrcBody()"
+            title="Buka sumber audio"
+            aria-label="Buka sumber audio"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <rect y="3" width="18" height="2" rx="1"></rect>
+              <rect y="8" width="18" height="2" rx="1"></rect>
+              <rect y="13" width="18" height="2" rx="1"></rect>
+            </svg>
+          </button>
+          <button class="play-btn" id="playBtn" onclick="togglePlay()">
+            ▶
+          </button>
+          <div class="progress-area">
+            <div
+              class="progress-track"
+              id="progressTrack"
+              onclick="seekAudio(event)"
+            >
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="time-row">
+              <span id="timeCur">0:00</span>
+              <span id="timeTot">0:00</span>
+            </div>
+          </div>
+          <div class="vol-row">
+            <span class="vol-icon">Vol</span>
+            <input
+              type="range"
+              id="volRange"
+              min="0"
+              max="100"
+              value="80"
+              oninput="setVolume(this.value)"
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <audio id="audioEl" crossorigin="anonymous"></audio>
+
+    <script src="app.js"></script>
+  </body>
+</html>
