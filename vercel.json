@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "style.css", "use": "@vercel/static" },
+    { "src": "app.js", "use": "@vercel/static" },
+    { "src": "icon.ico", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/index.html", "dest": "/index.html" },
+    { "src": "/style.css", "dest": "/style.css" },
+    { "src": "/app.js", "dest": "/app.js" },
+    { "src": "/icon.ico", "dest": "/icon.ico" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
