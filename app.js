@@ -451,11 +451,17 @@ function updateHUD() {
   document.getElementById("inputBass").value = "1";
   document.getElementById("inputFreq").value = hzStr;
   document.getElementById("liveVal").textContent = hzStr;
-  document.getElementById("yTop").textContent = maxV;
-  document.getElementById("yMid1").textContent = Math.round(maxV * 0.75);
-  document.getElementById("yMid2").textContent = Math.round(maxV * 0.5);
-  document.getElementById("yMid3").textContent = Math.round(maxV * 0.25);
-  document.getElementById("yBot").textContent = 0;
+  // Y-axis: tampilkan range kurs IDR yang realistis (sesuai nilai utama)
+  const currentRate = 18000 + hz * 3;
+  const rateHigh = Math.round(currentRate + 200);
+  const rateLow = Math.round(currentRate - 200);
+  const rateRange = rateHigh - rateLow;
+  const fmtAxis = (v) => new Intl.NumberFormat('id-ID').format(Math.round(v));
+  document.getElementById("yTop").textContent = fmtAxis(rateHigh);
+  document.getElementById("yMid1").textContent = fmtAxis(rateLow + rateRange * 0.75);
+  document.getElementById("yMid2").textContent = fmtAxis(rateLow + rateRange * 0.5);
+  document.getElementById("yMid3").textContent = fmtAxis(rateLow + rateRange * 0.25);
+  document.getElementById("yBot").textContent = fmtAxis(rateLow);
 }
 
 function avg(a, b) {
@@ -496,7 +502,7 @@ function onChartMove(e) {
   ch.style.left = `${mouseX}px`;
   dot.style.top = `${Math.max(8, Math.min(dotY, H - 8))}px`;
   document.getElementById("crosshairVal").textContent = formatHz(info.hz);
-  document.getElementById("crosshairLbl").textContent = info.band;
+  document.getElementById("crosshairLbl").textContent = "USD/IDR";
 
   if (mouseX > W * 0.6) box.classList.add("flip");
   else box.classList.remove("flip");
