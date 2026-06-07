@@ -388,7 +388,7 @@ function updateHUD() {
   let domIdx = 0;
   let domVal = 0;
 
-  for (let i = 0; i < bufLen; i++) {
+  for (let i = 2; i < bufLen; i++) {
     if (dataArr[i] > domVal) {
       domVal = dataArr[i];
       domIdx = i;
@@ -420,7 +420,7 @@ function avg(a, b) {
 
 function formatHz(hz) {
   const num = (typeof hz === 'number' && !isNaN(hz)) ? hz : 0;
-  const rate = 18000 + num;
+  const rate = 18000 + num * 3;
   return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rate);
 }
 
