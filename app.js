@@ -10,6 +10,7 @@ let history = [];
 let freqAtX = [];
 let lastDominantHz = 0;
 let srcOpen = false;
+let invertHorizontal = false;
 
 const audioEl = document.getElementById("audioEl");
 const canvas = document.getElementById("specCanvas");
@@ -305,6 +306,12 @@ function drawFull(W, H) {
     freqAtX.push({ hz, pct: v, band: getBand(hz) });
   }
 
+  if (invertHorizontal) {
+    pts.reverse();
+    pts.forEach(p => p[0] = W - p[0]);
+    freqAtX.reverse();
+  }
+
   history.push(pts.map(p => [...p]));
   if (history.length > 5) history.shift();
 
@@ -362,10 +369,20 @@ function drawWave(W, H) {
   analyser.getByteTimeDomainData(wave);
   mapFreqForHover(W);
 
-  ctx.beginPath();
+  const wavePoints = [];
   wave.forEach((v, i) => {
     const x = (i / (bufLen - 1)) * W;
     const y = ((v / 128) - 1) * (H * 0.42) + H / 2;
+    wavePoints.push([x, y]);
+  });
+
+  if (invertHorizontal) {
+    wavePoints.reverse();
+    wavePoints.forEach(p => p[0] = W - p[0]);
+  }
+
+  ctx.beginPath();
+  wavePoints.forEach(([x, y], i) => {
     i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
   ctx.strokeStyle = LINE_COLOR;
@@ -373,10 +390,9 @@ function drawWave(W, H) {
   ctx.stroke();
 
   ctx.beginPath();
-  wave.forEach((v, i) => {
-    const x = (i / (bufLen - 1)) * W;
-    const y = H - (((v / 128) - 1) * (H * 0.42) + H / 2);
-    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  wavePoints.forEach(([x, y], i) => {
+    const mirrorY = H - y;
+    i === 0 ? ctx.moveTo(x, mirrorY) : ctx.lineTo(x, mirrorY);
   });
   ctx.strokeStyle = "rgba(129,201,149,0.2)";
   ctx.lineWidth = 1;
@@ -387,6 +403,7 @@ function drawBass(W, H) {
   const BANDS = 40;
   const bw = W / BANDS;
   freqAtX = [];
+  const bars = [];
 
   for (let i = 0; i < BANDS; i++) {
     const idx = Math.floor((i / BANDS) * (bufLen * 0.15));
@@ -394,28 +411,54 @@ function drawBass(W, H) {
     const bh = v * H * 0.9;
     const x = i * bw;
     const hz = (idx / bufLen) * (audioCtx.sampleRate / 2);
-    const grad = ctx.createLinearGradient(0, H - bh, 0, H);
+    bars.push({ x, bh, bw, hz, v });
+    freqAtX.push({ hz, pct: v, band: getBand(hz) });
+  }
+
+  if (invertHorizontal) {
+    bars.reverse();
+    bars.forEach((bar, i) => {
+      bar.x = W - (i + 1) * bw;
+    });
+    freqAtX.reverse();
+  }
+
+  bars.forEach(bar => {
+    const grad = ctx.createLinearGradient(0, H - bar.bh, 0, H);
     grad.addColorStop(0, "rgba(129,201,149,0.8)");
     grad.addColorStop(1, "rgba(52,168,83,0.3)");
     ctx.fillStyle = grad;
-    ctx.fillRect(x + 1, H - bh, bw - 2, bh);
-    freqAtX.push({ hz, pct: v, band: getBand(hz) });
-  }
+    ctx.fillRect(bar.x + 1, H - bar.bh, bar.bw - 2, bar.bh);
+  });
 }
 
 function drawMaks(W, H) {
   const BANDS = Math.min(bufLen, 200);
   const bw = W / BANDS;
   freqAtX = [];
+  const bars = [];
 
   for (let i = 0; i < BANDS; i++) {
     const v = dataArr[i] / 255;
     const bh = v * H * 0.92;
+    const x = i * bw + 0.5;
     const hz = (i / bufLen) * (audioCtx.sampleRate / 2);
-    ctx.fillStyle = `hsla(${130 + (i / BANDS) * 50},60%,60%,0.7)`;
-    ctx.fillRect(i * bw + 0.5, H - bh, bw - 1, bh);
+    bars.push({ x, bh, bw, hz, v, hue: 130 + (i / BANDS) * 50, idx: i });
     freqAtX.push({ hz, pct: v, band: getBand(hz) });
   }
+
+  if (invertHorizontal) {
+    bars.reverse();
+    bars.forEach((bar, i) => {
+      bar.x = W - (i + 1) * bw + 0.5;
+    });
+    freqAtX.reverse();
+  }
+
+  bars.forEach(bar => {
+    ctx.fillStyle = `hsla(${bar.hue},60%,60%,0.7)`;
+    ctx.fillRect(bar.x, H - bar.bh, bar.bw - 1, bar.bh);
+  });
 }
 
 function mapFreqForHover() {
@@ -518,6 +561,15 @@ function toggleSrcBody() {
   document.getElementById("srcDrawer").classList.toggle("open", srcOpen);
   document.getElementById("drawerOverlay").classList.toggle("open", srcOpen);
   document.getElementById("menuBtn").classList.toggle("active", srcOpen);
+}
+
+function toggleInvertHorizontal() {
+  invertHorizontal = !invertHorizontal;
+  document.getElementById("invertCheckbox").checked = invertHorizontal;
+  if (!isPlaying) {
+    resize();
+    drawIdle();
+  }
 }
 
 const dz = document.getElementById("dropZone");

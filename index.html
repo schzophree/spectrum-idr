@@ -15,10 +15,27 @@
     ></div>
     <aside class="src-drawer" id="srcDrawer">
       <div class="drawer-header">
-        <h3>Sumber Audio</h3>
+        <h3>Menu</h3>
         <button class="drawer-close" onclick="toggleSrcBody()">&times;</button>
       </div>
       <div class="drawer-body">
+        <div class="menu-section">
+          <h4 class="menu-title">Visualisasi</h4>
+          <label class="menu-checkbox">
+            <input
+              type="checkbox"
+              id="invertCheckbox"
+              onchange="toggleInvertHorizontal()"
+            />
+            <span>Balik Horizontal (Bass Kanan)</span>
+          </label>
+        </div>
+
+        <div class="drawer-divider"></div>
+
+        <div class="menu-section">
+          <h4 class="menu-title">Sumber Audio</h4>
+        </div>
         <div class="upload-zone" id="dropZone">
           <input
             type="file"
@@ -184,6 +201,7 @@
 
               <canvas
                 id="specCanvas"
+                class="spec-canvas"
                 onmousemove="onChartMove(event)"
                 onmouseleave="onChartLeave()"
               ></canvas>

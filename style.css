@@ -210,10 +210,12 @@ button {
   font-size: 11px;
 }
 
-#specCanvas {
+#specCanvas.spec-canvas {
   position: absolute;
   top: 0;
   left: 0;
+  margin-left: 11px;
+  margin-right: 11px;
   cursor: crosshair;
 }
 
@@ -484,6 +486,37 @@ button {
   flex-direction: column;
   gap: 16px;
   overflow-y: auto;
+}
+
+.menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.menu-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9aa0a6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.menu-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: #e8eaed;
+  font-size: 13px;
+}
+
+.menu-checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #8ab4f8;
 }
 
 .drawer-divider {
