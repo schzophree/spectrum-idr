@@ -62,6 +62,23 @@ function onFileChange(e) {
   loadAudio(URL.createObjectURL(f), f.name.replace(/\.[^.]+$/, ""), "File Lokal");
 }
 
+async function fetchWithTimeout(resource, options = {}) {
+  const { timeout = 7000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+}
+
 async function fetchMedia(url, overrideBase = null) {
   let backendBase;
   if (overrideBase) {
@@ -79,7 +96,7 @@ async function fetchMedia(url, overrideBase = null) {
     }
   }
 
-  const response = await fetch(`${backendBase}/api/load-media?url=${encodeURIComponent(url)}`);
+  const response = await fetchWithTimeout(`${backendBase}/api/load-media?url=${encodeURIComponent(url)}`, { timeout: 7000 });
   const data = await response.json();
 
   if (!response.ok) {
@@ -110,30 +127,37 @@ async function loadFromUrl() {
   loadBtn.disabled = true;
 
   try {
+    // 1. Coba gunakan Cloud Server (Hugging Face) terlebih dahulu
     await fetchMedia(url);
     urlInput.value = "";
   } catch (err) {
-    console.error(err);
-    const errMsg = err.message || "";
+    console.warn("Cloud server failed or timed out:", err);
     
-    // Deteksi pemblokiran IP oleh YouTube (TLS/SSL EOF atau bot challenge)
-    const isBlock = errMsg.includes("TLS/SSL") || errMsg.includes("EOF") || errMsg.includes("bot") || errMsg.includes("confirm you're not a bot");
-    
-    if (isBlock && (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
+    // 2. Jika gagal/timeout, otomatis coba Localhost (komputer Anda) secara langsung tanpa tanya
+    setUrlStatus("ok", "Server Cloud gagal. Mencoba menggunakan Server Lokal komputer Anda...");
+    try {
+      await fetchMedia(url, 'http://localhost:5500');
+      urlInput.value = "";
+      return;
+    } catch (localErr) {
+      console.warn("Localhost failed:", localErr);
+      
+      // 3. Jika Localhost gagal juga (misalnya karena dibuka dari HP), coba gunakan ngrok yang tersimpan
       const savedNgrok = localStorage.getItem('ngrokUrl');
       if (savedNgrok) {
-        setUrlStatus("ok", "Server Cloud diblokir. Mencoba menggunakan ngrok Anda...");
+        setUrlStatus("ok", "Mencoba menggunakan alamat ngrok Anda...");
         try {
           await fetchMedia(url, savedNgrok);
           urlInput.value = "";
           return;
         } catch (ngrokErr) {
-          console.error("ngrok fallback failed:", ngrokErr);
+          console.warn("Saved ngrok failed:", ngrokErr);
         }
       }
       
+      // 4. Jika semua gagal, baru memunculkan prompt ngrok
       const userNgrok = prompt(
-        "Server Cloud diblokir oleh YouTube (IP Block).\n\nJika Anda menjalankan ngrok di komputer Anda, silakan masukkan URL ngrok Anda di bawah ini untuk dicoba kembali (contoh: https://xxxx.ngrok-free.app):",
+        "Koneksi Gagal (Server Cloud diblokir YouTube).\n\nJika Anda membuka ini dari HP dan menjalankan ngrok di komputer Anda, masukkan URL ngrok Anda (contoh: https://xxxx.ngrok-free.app):",
         savedNgrok || ""
       );
       
@@ -145,13 +169,11 @@ async function loadFromUrl() {
           await fetchMedia(url, cleanNgrok);
           urlInput.value = "";
         } catch (retryErr) {
-          setUrlStatus("error", `Error ngrok: ${retryErr.message}`);
+          setUrlStatus("error", `Gagal memutar audio: ${retryErr.message}`);
         }
       } else {
-        setUrlStatus("error", `Error: ${err.message}`);
+        setUrlStatus("error", "Gagal memproses audio dari Server Cloud maupun Lokal.");
       }
-    } else {
-      setUrlStatus("error", `Error: ${err.message}`);
     }
   } finally {
     loadBtn.disabled = false;
