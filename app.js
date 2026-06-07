@@ -79,7 +79,7 @@ async function fetchWithTimeout(resource, options = {}) {
   }
 }
 
-async function fetchMedia(url, overrideBase = null) {
+async function fetchMedia(url, overrideBase = null, timeout = 7000) {
   let backendBase;
   if (overrideBase) {
     backendBase = overrideBase;
@@ -96,7 +96,7 @@ async function fetchMedia(url, overrideBase = null) {
     }
   }
 
-  const response = await fetchWithTimeout(`${backendBase}/api/load-media?url=${encodeURIComponent(url)}`, { timeout: 7000 });
+  const response = await fetchWithTimeout(`${backendBase}/api/load-media?url=${encodeURIComponent(url)}`, { timeout });
   const data = await response.json();
 
   if (!response.ok) {
@@ -123,24 +123,24 @@ async function loadFromUrl() {
     return;
   }
 
-  setUrlStatus("ok", "Menghubungkan ke server dan memproses audio...");
+  setUrlStatus("ok", "Menghubungkan ke Server Lokal...");
   loadBtn.disabled = true;
 
   try {
-    // 1. Coba gunakan Cloud Server (Hugging Face) terlebih dahulu
-    await fetchMedia(url);
+    // 1. Coba gunakan Server Lokal (localhost) terlebih dahulu (timeout 7 detik)
+    await fetchMedia(url, 'http://localhost:5500');
     urlInput.value = "";
   } catch (err) {
-    console.warn("Cloud server failed or timed out:", err);
+    console.warn("Local server failed or timed out:", err);
     
-    // 2. Jika gagal/timeout, otomatis coba Localhost (komputer Anda) secara langsung tanpa tanya
-    setUrlStatus("ok", "Server Cloud gagal. Mencoba menggunakan Server Lokal...");
+    // 2. Jika gagal/timeout, otomatis coba Cloud Server (Hugging Face) dengan timeout lebih lama (20 detik)
+    setUrlStatus("ok", "Server Lokal gagal. Mencoba menggunakan Server Cloud...");
     try {
-      await fetchMedia(url, 'http://localhost:5500');
+      await fetchMedia(url, null, 20000);
       urlInput.value = "";
-    } catch (localErr) {
-      console.warn("Localhost failed:", localErr);
-      setUrlStatus("error", "Gagal memproses audio dari Server Cloud maupun Server Lokal.");
+    } catch (cloudErr) {
+      console.warn("Cloud server failed:", cloudErr);
+      setUrlStatus("error", "Gagal memproses audio dari Server Lokal maupun Server Cloud.");
     }
   } finally {
     loadBtn.disabled = false;
