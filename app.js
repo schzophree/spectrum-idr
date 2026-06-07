@@ -84,7 +84,7 @@ async function loadFromUrl() {
   try {
     const backendBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'http://localhost:5500'
-      : 'https://YOUR-RENDER-BACKEND-URL.onrender.com'; // TODO: Ganti dengan URL dari Render Anda nanti
+      : 'https://schzophree-spectrum-idr-backend.hf.space';
 
     const response = await fetch(`${backendBase}/api/load-media?url=${encodeURIComponent(url)}`);
     const data = await response.json();
