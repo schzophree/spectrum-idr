@@ -134,46 +134,13 @@ async function loadFromUrl() {
     console.warn("Cloud server failed or timed out:", err);
     
     // 2. Jika gagal/timeout, otomatis coba Localhost (komputer Anda) secara langsung tanpa tanya
-    setUrlStatus("ok", "Server Cloud gagal. Mencoba menggunakan Server Lokal komputer Anda...");
+    setUrlStatus("ok", "Server Cloud gagal. Mencoba menggunakan Server Lokal...");
     try {
       await fetchMedia(url, 'http://localhost:5500');
       urlInput.value = "";
-      return;
     } catch (localErr) {
       console.warn("Localhost failed:", localErr);
-      
-      // 3. Jika Localhost gagal juga (misalnya karena dibuka dari HP), coba gunakan ngrok yang tersimpan
-      const savedNgrok = localStorage.getItem('ngrokUrl');
-      if (savedNgrok) {
-        setUrlStatus("ok", "Mencoba menggunakan alamat ngrok Anda...");
-        try {
-          await fetchMedia(url, savedNgrok);
-          urlInput.value = "";
-          return;
-        } catch (ngrokErr) {
-          console.warn("Saved ngrok failed:", ngrokErr);
-        }
-      }
-      
-      // 4. Jika semua gagal, baru memunculkan prompt ngrok
-      const userNgrok = prompt(
-        "Koneksi Gagal (Server Cloud diblokir YouTube).\n\nJika Anda membuka ini dari HP dan menjalankan ngrok di komputer Anda, masukkan URL ngrok Anda (contoh: https://xxxx.ngrok-free.app):",
-        savedNgrok || ""
-      );
-      
-      if (userNgrok && userNgrok.trim()) {
-        const cleanNgrok = userNgrok.trim().replace(/\/$/, "");
-        localStorage.setItem('ngrokUrl', cleanNgrok);
-        setUrlStatus("ok", "Mencoba kembali menggunakan ngrok...");
-        try {
-          await fetchMedia(url, cleanNgrok);
-          urlInput.value = "";
-        } catch (retryErr) {
-          setUrlStatus("error", `Gagal memutar audio: ${retryErr.message}`);
-        }
-      } else {
-        setUrlStatus("error", "Gagal memproses audio dari Server Cloud maupun Lokal.");
-      }
+      setUrlStatus("error", "Gagal memproses audio dari Server Cloud maupun Server Lokal.");
     }
   } finally {
     loadBtn.disabled = false;
