@@ -7,7 +7,7 @@ const util = require('util');
 const execPromise = util.promisify(exec);
 
 const app = express();
-const PORT = 5000;
+const PORT = 5500;
 
 app.use(cors());
 app.use(express.json());
@@ -17,27 +17,32 @@ if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir);
 }
 
-// Helper to validate URL
-function isYoutubeUrl(url) {
-  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/.test(url);
+// Helper to validate URL - support multiple platforms
+function isValidMediaUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    return ['http:', 'https:'].includes(urlObj.protocol);
+  } catch {
+    return false;
+  }
 }
 
-// Endpoint to load and download YouTube audio
-app.get('/api/load-youtube', async (req, res) => {
+// Endpoint to load and download audio from any supported platform
+app.get('/api/load-media', async (req, res) => {
   try {
-    const videoUrl = req.query.url;
-    if (!videoUrl) {
+    const mediaUrl = req.query.url;
+    if (!mediaUrl) {
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    if (!isYoutubeUrl(videoUrl)) {
-      return res.status(400).json({ error: 'URL is not a valid YouTube link' });
+    if (!isValidMediaUrl(mediaUrl)) {
+      return res.status(400).json({ error: 'URL is not valid. Please use a complete URL (e.g., https://...)' });
     }
 
-    console.log(`Getting video info for: ${videoUrl}`);
+    console.log(`Getting media info for: ${mediaUrl}`);
     
     // Escape URL for command line safety
-    const escapedUrl = videoUrl.replace(/"/g, '\\"');
+    const escapedUrl = mediaUrl.replace(/"/g, '\\"');
     
     // 1. Get metadata
     let title = 'Unknown Title';
@@ -60,7 +65,7 @@ app.get('/api/load-youtube', async (req, res) => {
     }
 
     // 2. Download audio
-    const tempPath = path.join(tempDir, 'youtube.m4a');
+    const tempPath = path.join(tempDir, 'media.m4a');
     console.log(`Downloading audio using yt-dlp to: ${tempPath}`);
 
     // Delete existing temp file if it exists
@@ -72,7 +77,7 @@ app.get('/api/load-youtube', async (req, res) => {
       }
     }
 
-    const downloadCmd = `python -m yt_dlp -f "bestaudio[ext=m4a]" -o "${tempPath}" "${escapedUrl}"`;
+    const downloadCmd = `python -m yt_dlp -f "bestaudio[ext=m4a]/bestaudio" -o "${tempPath}" "${escapedUrl}"`;
     await execPromise(downloadCmd);
     
     console.log('Download finished successfully via yt-dlp');
@@ -91,9 +96,9 @@ app.get('/api/load-youtube', async (req, res) => {
 
 // Endpoint to serve the downloaded audio file
 app.get('/api/audio', (req, res) => {
-  const tempPath = path.join(tempDir, 'youtube.m4a');
+  const tempPath = path.join(tempDir, 'media.m4a');
   if (!fs.existsSync(tempPath)) {
-    return res.status(404).send('Audio file not found. Please load a YouTube link first.');
+    return res.status(404).send('Audio file not found. Please load a media link first.');
   }
 
   // Set proper cache control so browser requests fresh copy when we update the file
@@ -103,5 +108,6 @@ app.get('/api/audio', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`YouTube audio proxy server running on http://localhost:${PORT}`);
+  console.log(`Multi-platform audio proxy server running on http://localhost:${PORT}`);
+  console.log(`Supported platforms: YouTube, SoundCloud, Vimeo, Spotify, TikTok, Instagram, Twitch, and 1000+ more via yt-dlp`);
 });
