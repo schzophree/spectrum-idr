@@ -123,28 +123,52 @@ async function loadFromUrl() {
     return;
   }
 
-  setUrlStatus("ok", "Menghubungkan ke Server Lokal...");
   loadBtn.disabled = true;
 
-  try {
-    // 1. Coba gunakan Server Lokal (localhost) terlebih dahulu (timeout 7 detik)
-    await fetchMedia(url, 'http://localhost:5500');
-    urlInput.value = "";
-  } catch (err) {
-    console.warn("Local server failed or timed out:", err);
-    
-    // 2. Jika gagal/timeout, otomatis coba Cloud Server (Hugging Face) dengan timeout lebih lama (20 detik)
-    setUrlStatus("ok", "Server Lokal gagal. Mencoba menggunakan Server Cloud...");
+  // Deteksi otomatis: apakah user di localhost/LAN atau di situs deployed (Vercel)?
+  const hostname = window.location.hostname;
+  const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
+
+  if (isLocal) {
+    // Di PC/localhost: Lokal dulu (7s) → Cloud (20s)
+    setUrlStatus("ok", "Menghubungkan ke Server Lokal...");
+    try {
+      const localBase = (hostname === 'localhost' || hostname === '127.0.0.1')
+        ? 'http://localhost:5500'
+        : `http://${hostname}:5500`;
+      await fetchMedia(url, localBase);
+      urlInput.value = "";
+    } catch (err) {
+      console.warn("Local server failed or timed out:", err);
+      setUrlStatus("ok", "Server Lokal gagal. Mencoba Server Cloud...");
+      try {
+        await fetchMedia(url, null, 20000);
+        urlInput.value = "";
+      } catch (cloudErr) {
+        console.warn("Cloud server failed:", cloudErr);
+        setUrlStatus("error", "Gagal memproses audio dari Server Lokal maupun Server Cloud.");
+      }
+    }
+  } else {
+    // Di Vercel/internet: Cloud dulu (20s) → Lokal (7s)
+    setUrlStatus("ok", "Menghubungkan ke Server Cloud...");
     try {
       await fetchMedia(url, null, 20000);
       urlInput.value = "";
-    } catch (cloudErr) {
-      console.warn("Cloud server failed:", cloudErr);
-      setUrlStatus("error", "Gagal memproses audio dari Server Lokal maupun Server Cloud.");
+    } catch (err) {
+      console.warn("Cloud server failed or timed out:", err);
+      setUrlStatus("ok", "Server Cloud gagal. Mencoba Server Lokal...");
+      try {
+        await fetchMedia(url, 'http://localhost:5500');
+        urlInput.value = "";
+      } catch (localErr) {
+        console.warn("Local server failed:", localErr);
+        setUrlStatus("error", "Gagal memproses audio dari Server Cloud maupun Server Lokal.");
+      }
     }
-  } finally {
-    loadBtn.disabled = false;
   }
+
+  loadBtn.disabled = false;
 }
 
 function setUrlStatus(type, text) {
