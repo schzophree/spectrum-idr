@@ -53,15 +53,10 @@ app.get('/api/load-media', async (req, res) => {
     if (isYoutube) {
       console.log(`YouTube URL detected. Processing: ${mediaUrl}`);
       
-      // Delete existing temp file if it exists
-      if (fs.existsSync(tempPath)) {
-        try { fs.unlinkSync(tempPath); } catch (err) { console.warn('Could not delete existing temp file:', err.message); }
-      }
-
-      // First try: get audio-only stream URL (fast, no download needed)
+      // First try: get audio-only stream URL directly (instant, no download needed)
       try {
-        const streamCmd = `python -m yt_dlp --no-playlist --remote-components ejs:github --extractor-args "youtube:player_client=web" --js-runtimes node --print "%(title)s" --print "%(uploader)s" -g -f "bestaudio[ext=m4a]/bestaudio" "${escapedUrl}"`;
-        const { stdout: streamOut } = await execPromise(streamCmd, { timeout: 30000 });
+        const streamCmd = `python -m yt_dlp --no-playlist --print "%(title)s" --print "%(uploader)s" -g -f "bestaudio[ext=m4a]/bestaudio" "${escapedUrl}"`;
+        const { stdout: streamOut } = await execPromise(streamCmd, { timeout: 15000 });
         
         const lines = streamOut.split('\n').map(l => l.trim()).filter(Boolean);
         const cleanLines = lines.filter(l => !l.startsWith('WARNING:'));
@@ -80,13 +75,16 @@ app.get('/api/load-media', async (req, res) => {
           });
         }
       } catch (streamErr) {
-        console.warn('Audio-only stream not available (SABR experiment?), falling back to download:', streamErr.message);
+        console.warn('Direct streaming failed, falling back to download:', streamErr.message);
       }
       
-      // Fallback: download best available format without conversion (no ffmpeg needed)
-      // Browser <audio> element can play mp4 audio just fine
-      const dlCmd = `python -m yt_dlp --no-playlist --remote-components ejs:github --extractor-args "youtube:player_client=web,android" --js-runtimes node --print "%(title)s" --print "%(uploader)s" -f "bestaudio[ext=m4a]/bestaudio/best" -o "${tempPath}" "${escapedUrl}"`;
-      const { stdout } = await execPromise(dlCmd, { timeout: 60000 });
+      // Fallback: download best format directly without conversion (no ffmpeg needed)
+      if (fs.existsSync(tempPath)) {
+        try { fs.unlinkSync(tempPath); } catch (err) { console.warn('Could not delete existing temp file:', err.message); }
+      }
+      
+      const dlCmd = `python -m yt_dlp --no-playlist --print "%(title)s" --print "%(uploader)s" -f "bestaudio[ext=m4a]/bestaudio/best" -o "${tempPath}" "${escapedUrl}"`;
+      const { stdout } = await execPromise(dlCmd, { timeout: 30000 });
       
       const lines = stdout.split('\n').map(l => l.trim()).filter(Boolean);
       const cleanLines = lines.filter(l => !l.startsWith('WARNING:') && !l.startsWith('['));
