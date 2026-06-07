@@ -67,9 +67,16 @@ async function fetchMedia(url, overrideBase = null) {
   if (overrideBase) {
     backendBase = overrideBase;
   } else {
-    backendBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? 'http://localhost:5500'
-      : 'https://schzophree-spectrum-idr-backend.hf.space';
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isLocalIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(window.location.hostname);
+    
+    if (isLocal) {
+      backendBase = 'http://localhost:5500';
+    } else if (isLocalIp) {
+      backendBase = `http://${window.location.hostname}:5500`;
+    } else {
+      backendBase = 'https://schzophree-spectrum-idr-backend.hf.space';
+    }
   }
 
   const response = await fetch(`${backendBase}/api/load-media?url=${encodeURIComponent(url)}`);
