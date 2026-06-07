@@ -402,7 +402,7 @@ function updateHUD() {
   const maxV = Math.round(avg(0, Math.floor(bufLen * 0.55)) * 100 * 4) || 100;
 
   document.getElementById("bigValue").textContent = `${hzStr} Rupiah Indonesia`;
-  document.getElementById("inputBass").value = Math.round(bass * 100);
+  document.getElementById("inputBass").value = "1";
   document.getElementById("inputFreq").value = hzStr;
   document.getElementById("liveVal").textContent = hzStr;
   document.getElementById("yTop").textContent = maxV;
