@@ -34,20 +34,20 @@
         <div class="drawer-divider">atau</div>
 
         <div class="url-input-section">
-          <label for="ytUrlInput" class="url-label"
-            >Masukkan Link YouTube</label
+          <label for="mediaUrlInput" class="url-label"
+            >Masukkan Link Media (YouTube, SoundCloud, Spotify, TikTok, dll)</label
           >
           <div class="url-row">
             <input
               class="url-input"
-              id="ytUrlInput"
+              id="mediaUrlInput"
               type="url"
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="https://www.youtube.com/watch?v=... atau URL platform lain"
             />
             <button
               class="gf-load-btn"
-              id="ytLoadBtn"
-              onclick="loadFromYoutube()"
+              id="mediaLoadBtn"
+              onclick="loadFromUrl()"
             >
               Muat
             </button>

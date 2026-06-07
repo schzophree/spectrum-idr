@@ -62,18 +62,19 @@ function onFileChange(e) {
   loadAudio(URL.createObjectURL(f), f.name.replace(/\.[^.]+$/, ""), "File Lokal");
 }
 
-async function loadFromYoutube() {
-  const urlInput = document.getElementById("ytUrlInput");
-  const loadBtn = document.getElementById("ytLoadBtn");
+async function loadFromUrl() {
+  const urlInput = document.getElementById("mediaUrlInput");
+  const loadBtn = document.getElementById("mediaLoadBtn");
   const url = urlInput.value.trim();
 
   if (!url) {
-    setUrlStatus("warn", "Silakan masukkan link YouTube terlebih dahulu.");
+    setUrlStatus("warn", "Silakan masukkan link terlebih dahulu.");
     return;
   }
 
-  if (!/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/.test(url)) {
-    setUrlStatus("error", "Link YouTube tidak valid.");
+  // Basic URL validation
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    setUrlStatus("error", "URL harus dimulai dengan http:// atau https://");
     return;
   }
 
@@ -81,11 +82,11 @@ async function loadFromYoutube() {
   loadBtn.disabled = true;
 
   try {
-    const response = await fetch(`http://localhost:5000/api/load-youtube?url=${encodeURIComponent(url)}`);
+    const response = await fetch(`http://localhost:5500/api/load-media?url=${encodeURIComponent(url)}`);
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Gagal mengunduh audio dari YouTube.");
+      throw new Error(data.error || "Gagal mengunduh audio.");
     }
 
     setUrlStatus("ok", `Sukses memuat: ${data.title}`);
