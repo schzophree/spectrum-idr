@@ -62,6 +62,27 @@ function onFileChange(e) {
   loadAudio(URL.createObjectURL(f), f.name.replace(/\.[^.]+$/, ""), "File Lokal");
 }
 
+async function fetchMedia(url, overrideBase = null) {
+  let backendBase;
+  if (overrideBase) {
+    backendBase = overrideBase;
+  } else {
+    backendBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5500'
+      : 'https://schzophree-spectrum-idr-backend.hf.space';
+  }
+
+  const response = await fetch(`${backendBase}/api/load-media?url=${encodeURIComponent(url)}`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Gagal memproses audio.");
+  }
+
+  setUrlStatus("ok", `Sukses memuat: ${data.title}`);
+  loadAudio(data.streamUrl, data.title, data.artist);
+}
+
 async function loadFromUrl() {
   const urlInput = document.getElementById("mediaUrlInput");
   const loadBtn = document.getElementById("mediaLoadBtn");
@@ -78,28 +99,53 @@ async function loadFromUrl() {
     return;
   }
 
-  setUrlStatus("ok", "Menghubungkan ke server lokal dan mengunduh audio...");
+  setUrlStatus("ok", "Menghubungkan ke server dan memproses audio...");
   loadBtn.disabled = true;
 
   try {
-    const backendBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? 'http://localhost:5500'
-      : 'https://schzophree-spectrum-idr-backend.hf.space';
-
-    const response = await fetch(`${backendBase}/api/load-media?url=${encodeURIComponent(url)}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Gagal mengunduh audio.");
-    }
-
-    setUrlStatus("ok", `Sukses memuat: ${data.title}`);
-    loadAudio(data.streamUrl, data.title, data.artist);
-    
+    await fetchMedia(url);
     urlInput.value = "";
   } catch (err) {
     console.error(err);
-    setUrlStatus("error", `Error: ${err.message}. Pastikan backend server Anda sudah berjalan (node server.js).`);
+    const errMsg = err.message || "";
+    
+    // Deteksi pemblokiran IP oleh YouTube (TLS/SSL EOF atau bot challenge)
+    const isBlock = errMsg.includes("TLS/SSL") || errMsg.includes("EOF") || errMsg.includes("bot") || errMsg.includes("confirm you're not a bot");
+    
+    if (isBlock && (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
+      const savedNgrok = localStorage.getItem('ngrokUrl');
+      if (savedNgrok) {
+        setUrlStatus("ok", "Server Cloud diblokir. Mencoba menggunakan ngrok Anda...");
+        try {
+          await fetchMedia(url, savedNgrok);
+          urlInput.value = "";
+          return;
+        } catch (ngrokErr) {
+          console.error("ngrok fallback failed:", ngrokErr);
+        }
+      }
+      
+      const userNgrok = prompt(
+        "Server Cloud diblokir oleh YouTube (IP Block).\n\nJika Anda menjalankan ngrok di komputer Anda, silakan masukkan URL ngrok Anda di bawah ini untuk dicoba kembali (contoh: https://xxxx.ngrok-free.app):",
+        savedNgrok || ""
+      );
+      
+      if (userNgrok && userNgrok.trim()) {
+        const cleanNgrok = userNgrok.trim().replace(/\/$/, "");
+        localStorage.setItem('ngrokUrl', cleanNgrok);
+        setUrlStatus("ok", "Mencoba kembali menggunakan ngrok...");
+        try {
+          await fetchMedia(url, cleanNgrok);
+          urlInput.value = "";
+        } catch (retryErr) {
+          setUrlStatus("error", `Error ngrok: ${retryErr.message}`);
+        }
+      } else {
+        setUrlStatus("error", `Error: ${err.message}`);
+      }
+    } else {
+      setUrlStatus("error", `Error: ${err.message}`);
+    }
   } finally {
     loadBtn.disabled = false;
   }
