@@ -4,8 +4,7 @@
   "description": "Local backend to load and serve YouTube audio for spectrum visualizer",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "postinstall": "pip3 install yt-dlp || pip install yt-dlp || python3 -m pip install yt-dlp || python -m pip install yt-dlp"
+    "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
