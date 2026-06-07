@@ -1,5 +1,4 @@
-# Use Node LTS image
-FROM node:18-bullseye-slim
+FROM node:20-bookworm-slim
 
 # Install Python3, pip, and ffmpeg
 RUN apt-get update && apt-get install -y \
