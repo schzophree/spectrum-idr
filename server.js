@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
@@ -12,10 +13,8 @@ const PORT = 5500;
 app.use(cors());
 app.use(express.json());
 
-const tempDir = path.join(__dirname, 'temp');
-if (!fs.existsSync(tempDir)) {
-  fs.mkdirSync(tempDir);
-}
+// Store temp audio file in OS temporary directory to prevent local dev server (e.g. VS Code Live Server) from hot-reloading when file changes
+const tempPath = path.join(os.tmpdir(), 'spectrum-idr-media.m4a');
 
 // Helper to validate URL - support multiple platforms
 function isValidMediaUrl(url) {
@@ -65,7 +64,6 @@ app.get('/api/load-media', async (req, res) => {
     }
 
     // 2. Download audio
-    const tempPath = path.join(tempDir, 'media.m4a');
     console.log(`Downloading audio using yt-dlp to: ${tempPath}`);
 
     // Delete existing temp file if it exists
@@ -89,14 +87,13 @@ app.get('/api/load-media', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error processing load-youtube:', error);
+    console.error('Error processing load-media:', error);
     res.status(500).json({ error: 'Failed to extract audio. Error: ' + error.message });
   }
 });
 
 // Endpoint to serve the downloaded audio file
 app.get('/api/audio', (req, res) => {
-  const tempPath = path.join(tempDir, 'media.m4a');
   if (!fs.existsSync(tempPath)) {
     return res.status(404).send('Audio file not found. Please load a media link first.');
   }
