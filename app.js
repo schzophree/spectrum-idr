@@ -420,7 +420,7 @@ function avg(a, b) {
 
 function formatHz(hz) {
   const num = (typeof hz === 'number' && !isNaN(hz)) ? hz : 0;
-  const rate = 16000 + num;
+  const rate = 18000 + num;
   return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rate);
 }
 
@@ -497,4 +497,16 @@ setInterval(updateClock, 30000);
 window.addEventListener("resize", () => {
   resize();
   if (!isPlaying) drawIdle();
+});
+
+// Spacebar play/pause shortcut
+window.addEventListener("keydown", (e) => {
+  if (e.code === "Space" || e.key === " ") {
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+      return;
+    }
+    e.preventDefault();
+    togglePlay();
+  }
 });
