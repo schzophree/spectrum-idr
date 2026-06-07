@@ -54,7 +54,7 @@ app.get('/api/load-media', async (req, res) => {
       console.log(`YouTube URL detected. Setting up direct stream for: ${mediaUrl}`);
       
       // Get title, artist, and direct stream URL in one command to minimize response latency
-      const cmd = `python -m yt_dlp --no-playlist --print "%(title)s" --print "%(uploader)s" -g -f "bestaudio[ext=m4a]/bestaudio" "${escapedUrl}"`;
+      const cmd = `python -m yt_dlp --no-playlist --extractor-args "youtube:player_client=android,web" --js-runtimes node --print "%(title)s" --print "%(uploader)s" -g -f "bestaudio[ext=m4a]/bestaudio" "${escapedUrl}"`;
       const { stdout } = await execPromise(cmd);
       
       const lines = stdout.split('\n').map(l => l.trim()).filter(Boolean);
