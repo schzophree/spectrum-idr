@@ -123,52 +123,28 @@ async function loadFromUrl() {
     return;
   }
 
+  setUrlStatus("ok", "Menghubungkan ke Server Lokal...");
   loadBtn.disabled = true;
 
-  // Deteksi otomatis: apakah user di localhost/LAN atau di situs deployed (Vercel)?
-  const hostname = window.location.hostname;
-  const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(hostname);
-
-  if (isLocal) {
-    // Di PC/localhost: Lokal dulu (7s) → Cloud (20s)
-    setUrlStatus("ok", "Menghubungkan ke Server Lokal...");
-    try {
-      const localBase = (hostname === 'localhost' || hostname === '127.0.0.1')
-        ? 'http://localhost:5500'
-        : `http://${hostname}:5500`;
-      await fetchMedia(url, localBase);
-      urlInput.value = "";
-    } catch (err) {
-      console.warn("Local server failed or timed out:", err);
-      setUrlStatus("ok", "Server Lokal gagal. Mencoba Server Cloud...");
-      try {
-        await fetchMedia(url, null, 20000);
-        urlInput.value = "";
-      } catch (cloudErr) {
-        console.warn("Cloud server failed:", cloudErr);
-        setUrlStatus("error", "Gagal memproses audio dari Server Lokal maupun Server Cloud.");
-      }
-    }
-  } else {
-    // Di Vercel/internet: Cloud dulu (20s) → Lokal (7s)
-    setUrlStatus("ok", "Menghubungkan ke Server Cloud...");
+  try {
+    // 1. Coba gunakan Server Lokal (localhost) terlebih dahulu (timeout 7 detik)
+    await fetchMedia(url, 'http://localhost:5500');
+    urlInput.value = "";
+  } catch (err) {
+    console.warn("Local server failed or timed out:", err);
+    
+    // 2. Jika gagal/timeout, otomatis coba Cloud Server (Hugging Face) dengan timeout lebih lama (20 detik)
+    setUrlStatus("ok", "Server Lokal gagal. Mencoba menggunakan Server Cloud...");
     try {
       await fetchMedia(url, null, 20000);
       urlInput.value = "";
-    } catch (err) {
-      console.warn("Cloud server failed or timed out:", err);
-      setUrlStatus("ok", "Server Cloud gagal. Mencoba Server Lokal...");
-      try {
-        await fetchMedia(url, 'http://localhost:5500');
-        urlInput.value = "";
-      } catch (localErr) {
-        console.warn("Local server failed:", localErr);
-        setUrlStatus("error", "Gagal memproses audio dari Server Cloud maupun Server Lokal.");
-      }
+    } catch (cloudErr) {
+      console.warn("Cloud server failed:", cloudErr);
+      setUrlStatus("error", "Gagal memproses audio dari Server Lokal maupun Server Cloud.");
     }
+  } finally {
+    loadBtn.disabled = false;
   }
-
-  loadBtn.disabled = false;
 }
 
 function setUrlStatus(type, text) {
@@ -475,17 +451,11 @@ function updateHUD() {
   document.getElementById("inputBass").value = "1";
   document.getElementById("inputFreq").value = hzStr;
   document.getElementById("liveVal").textContent = hzStr;
-  // Y-axis: tampilkan range kurs IDR yang realistis (sesuai nilai utama)
-  const currentRate = 18000 + hz * 3;
-  const rateHigh = Math.round(currentRate + 200);
-  const rateLow = Math.round(currentRate - 200);
-  const rateRange = rateHigh - rateLow;
-  const fmtAxis = (v) => new Intl.NumberFormat('id-ID').format(Math.round(v));
-  document.getElementById("yTop").textContent = fmtAxis(rateHigh);
-  document.getElementById("yMid1").textContent = fmtAxis(rateLow + rateRange * 0.75);
-  document.getElementById("yMid2").textContent = fmtAxis(rateLow + rateRange * 0.5);
-  document.getElementById("yMid3").textContent = fmtAxis(rateLow + rateRange * 0.25);
-  document.getElementById("yBot").textContent = fmtAxis(rateLow);
+  document.getElementById("yTop").textContent = maxV;
+  document.getElementById("yMid1").textContent = Math.round(maxV * 0.75);
+  document.getElementById("yMid2").textContent = Math.round(maxV * 0.5);
+  document.getElementById("yMid3").textContent = Math.round(maxV * 0.25);
+  document.getElementById("yBot").textContent = 0;
 }
 
 function avg(a, b) {
@@ -526,7 +496,7 @@ function onChartMove(e) {
   ch.style.left = `${mouseX}px`;
   dot.style.top = `${Math.max(8, Math.min(dotY, H - 8))}px`;
   document.getElementById("crosshairVal").textContent = formatHz(info.hz);
-  document.getElementById("crosshairLbl").textContent = "USD/IDR";
+  document.getElementById("crosshairLbl").textContent = info.band;
 
   if (mouseX > W * 0.6) box.classList.add("flip");
   else box.classList.remove("flip");
