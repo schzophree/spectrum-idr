@@ -10,7 +10,8 @@ const util = require('util');
 const execPromise = util.promisify(exec);
 
 const app = express();
-const PORT = 5500;
+app.set('trust proxy', true);
+const PORT = process.env.PORT || 5500;
 
 app.use(cors());
 app.use(express.json());
@@ -45,6 +46,7 @@ app.get('/api/load-media', async (req, res) => {
       return res.status(400).json({ error: 'URL is not valid. Please use a complete URL (e.g., https://...)' });
     }
 
+    const hostUrl = `${req.protocol}://${req.get('host')}`;
     const isYoutube = isYoutubeUrl(mediaUrl);
     const escapedUrl = mediaUrl.replace(/"/g, '\\"');
 
@@ -71,7 +73,7 @@ app.get('/api/load-media', async (req, res) => {
         success: true,
         title: title,
         artist: artist,
-        streamUrl: `http://localhost:${PORT}/api/proxy-stream?url=${encodeURIComponent(streamUrl)}`
+        streamUrl: `${hostUrl}/api/proxy-stream?url=${encodeURIComponent(streamUrl)}`
       });
       
     } else {
@@ -105,7 +107,7 @@ app.get('/api/load-media', async (req, res) => {
         success: true,
         title: title,
         artist: artist,
-        streamUrl: `http://localhost:${PORT}/api/audio?t=${Date.now()}`
+        streamUrl: `${hostUrl}/api/audio?t=${Date.now()}`
       });
     }
 
