@@ -30,7 +30,7 @@ function isValidMediaUrl(url) {
 
 // Helper to check if URL is YouTube
 function isYoutubeUrl(url) {
-  return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/.test(url);
+  return /^(https?:\/\/)?([a-z0-9-]+\.)?(youtube\.com|youtu\.be)\/.+$/.test(url);
 }
 
 // Endpoint to load and download audio from any supported platform (Hybrid: YouTube streams, others download)
